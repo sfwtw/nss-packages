@@ -667,6 +667,16 @@
  {
  	int32_t if_num;
  	struct nss_ctx_instance *nss_ctx = nss_ppe_vp_get_context();
+@@ -779,8 +779,7 @@ static struct ctl_table nss_ppe_vp_table
+ 		.maxlen         = sizeof(nss_ppe_vp_cmd),
+ 		.mode           = 0644,
+ 		.proc_handler   = &nss_ppe_vp_destroy_handler,
+-	},
+-	{ }
++	}
+ };
+ 
+ static struct ctl_table_header *nss_ppe_vp_procfs_header;
 --- a/nss_pppoe.c
 +++ b/nss_pppoe.c
 @@ -203,7 +203,7 @@ static void nss_pppoe_handler(struct nss

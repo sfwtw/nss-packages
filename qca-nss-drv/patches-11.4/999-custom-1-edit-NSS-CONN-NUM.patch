@@ -1,0 +1,13 @@
+--- a/nss_hlos_if.h
++++ b/nss_hlos_if.h
+@@ -44,8 +44,8 @@
+ #define NSS_DEFAULT_NUM_CONN			2048		/* Default number of connections for IPv4 and IPv6 each, for medium memory profile */
+ #define NSS_MAX_TOTAL_NUM_CONN_IPV4_IPV6	4096		/* MAX Connection shared between IPv4 and IPv6 for medium memory profile */
+ #else
+-#define NSS_DEFAULT_NUM_CONN			4096		/* Default number of connections for each IPv4 and IPv6 */
+-#define NSS_MAX_TOTAL_NUM_CONN_IPV4_IPV6	8192		/* MAX Connection shared between IPv4 and IPv6 */
++#define NSS_DEFAULT_NUM_CONN			16384		/* Default number of connections for each IPv4 and IPv6 */
++#define NSS_MAX_TOTAL_NUM_CONN_IPV4_IPV6	32768		/* MAX Connection shared between IPv4 and IPv6 */
+ #endif
+ 
+ #if defined(NSS_SKB_FIXED_SIZE_2K) && !defined(__LP64__)

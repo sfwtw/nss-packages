@@ -64,7 +64,23 @@
  	sock_put(tun->sk);
 --- a/ipsecmgr/v2.0/plugins/xfrm/nss_ipsec_xfrm.c
 +++ b/ipsecmgr/v2.0/plugins/xfrm/nss_ipsec_xfrm.c
-@@ -1222,6 +1222,7 @@ drop:
+@@ -1,5 +1,6 @@
+ /* Copyright (c) 2021, The Linux Foundation. All rights reserved.
+  *
++ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+  * Permission to use, copy, modify, and/or distribute this software for any
+  * purpose with or without fee is hereby granted, provided that the above
+  * copyright notice and this permission notice appear in all copies.
+@@ -254,7 +255,7 @@ static void nss_ipsec_xfrm_flush_flow_by
+ 
+ 	for (count = NSS_IPSEC_XFRM_FLOW_DB_MAX; count--; db_head++) {
+ 		list_for_each_entry_safe(flow, tmp, db_head, list_entry) {
+-			if (flow->sa == sa) {
++			if (READ_ONCE(flow->sa) == sa) {
+ 				list_del_init(&flow->list_entry);
+ 				list_add(&flow->list_entry, &free_head);
+ 			}
+@@ -1222,6 +1223,7 @@ drop:
  	return -EINVAL;
  }
  
@@ -72,7 +88,7 @@
  /*
   * nss_ipsec_xfrm_v4_output_finish()
   *	This is called for non-offloaded transformations after the NF_POST routing hooks
-@@ -1243,9 +1244,8 @@ static int nss_ipsec_xfrm_v4_output_fini
+@@ -1243,9 +1245,8 @@ static int nss_ipsec_xfrm_v4_output_fini
   */
  static int nss_ipsec_xfrm_v4_extract_input(struct xfrm_state *x, struct sk_buff *skb)
  {
@@ -83,7 +99,7 @@
  	return drv->xsa.v4->extract_input(x, skb);
  }
  
-@@ -1257,11 +1257,12 @@ static int nss_ipsec_xfrm_v4_extract_inp
+@@ -1257,11 +1258,12 @@ static int nss_ipsec_xfrm_v4_extract_inp
   */
  static int nss_ipsec_xfrm_v4_extract_output(struct xfrm_state *x, struct sk_buff *skb)
  {
@@ -97,7 +113,7 @@
  
  /*
   * nss_ipsec_xfrm_v4_transport_finish()
-@@ -1360,14 +1361,14 @@ fallback:
+@@ -1360,14 +1362,14 @@ fallback:
   * nss_ipsec_xfrm_esp_init_state()
   * 	Initialize IPsec xfrm state of type ESP.
   */
@@ -114,7 +130,7 @@
  	bool new_tun = 0;
  	size_t ip_addr_len;
  
-@@ -1375,7 +1376,7 @@ static int nss_ipsec_xfrm_esp_init_state
+@@ -1375,7 +1377,7 @@ static int nss_ipsec_xfrm_esp_init_state
  		local_dev = ip_dev_find(&init_net, x->id.daddr.a4);
  		ip_addr_len = sizeof(local.a4);
  	} else {
@@ -123,7 +139,7 @@
  		ip_addr_len = sizeof(local.a6);
  	}
  
-@@ -1716,6 +1717,7 @@ drop:
+@@ -1716,6 +1718,7 @@ drop:
  	return -EINVAL;
  }
  
@@ -131,7 +147,7 @@
  /*
   * nss_ipsec_xfrm_v6_output_finish()
   *	This is called for non-offloaded transformations after the NF_POST routing hooks
-@@ -1737,9 +1739,9 @@ static int nss_ipsec_xfrm_v6_output_fini
+@@ -1737,9 +1740,9 @@ static int nss_ipsec_xfrm_v6_output_fini
   */
  static int nss_ipsec_xfrm_v6_extract_input(struct xfrm_state *x, struct sk_buff *skb)
  {
@@ -142,7 +158,7 @@
  	return drv->xsa.v6->extract_input(x, skb);
  }
  
-@@ -1751,11 +1753,11 @@ static int nss_ipsec_xfrm_v6_extract_inp
+@@ -1751,11 +1754,11 @@ static int nss_ipsec_xfrm_v6_extract_inp
   */
  static int nss_ipsec_xfrm_v6_extract_output(struct xfrm_state *x, struct sk_buff *skb)
  {
@@ -156,7 +172,7 @@
  
  /*
   * nss_ipsec_xfrm_v6_transport_finish()
-@@ -1783,22 +1785,25 @@ void nss_ipsec_xfrm_v6_local_error(struc
+@@ -1783,22 +1786,25 @@ void nss_ipsec_xfrm_v6_local_error(struc
  	return drv->xsa.v6->local_error(skb, mtu);
  }
  
@@ -189,7 +205,7 @@
  
  /*
   * nss_ipsec_xfrm_esp6_rcv()
-@@ -1949,7 +1954,6 @@ static void nss_ipsec_xfrm_state_delete(
+@@ -1949,7 +1955,6 @@ static void nss_ipsec_xfrm_state_delete(
  		nss_ipsec_xfrm_del_tun(drv, tun);
  	}
  
@@ -197,7 +213,7 @@
  }
  
  /*
-@@ -2018,9 +2022,11 @@ static struct xfrm_state_afinfo xfrm_v4_
+@@ -2018,9 +2023,11 @@ static struct xfrm_state_afinfo xfrm_v4_
  	.init_temprop = nss_ipsec_xfrm_v4_init_param,
  #endif
  	.output = nss_ipsec_xfrm_v4_output,
@@ -209,7 +225,7 @@
  	.transport_finish = nss_ipsec_xfrm_v4_transport_finish,
  	.local_error = nss_ipsec_xfrm_v4_local_error,
  };
-@@ -2065,7 +2071,6 @@ struct xfrm_mode xfrm_v6_mode_map[XFRM_M
+@@ -2065,7 +2072,6 @@ struct xfrm_mode xfrm_v6_mode_map[XFRM_M
   * IPv4 xfrm_type ESP object.
   */
  static const struct xfrm_type xfrm_v4_type = {
@@ -217,7 +233,7 @@
  	.owner = THIS_MODULE,
  	.proto = IPPROTO_ESP,
  	.flags = XFRM_TYPE_REPLAY_PROT,
-@@ -2101,9 +2106,11 @@ static struct xfrm_state_afinfo xfrm_v6_
+@@ -2101,9 +2107,11 @@ static struct xfrm_state_afinfo xfrm_v6_
  	.state_sort = nss_ipsec_xfrm_v6_sort_state,
  #endif
  	.output = nss_ipsec_xfrm_v6_output,
@@ -229,7 +245,7 @@
  	.transport_finish = nss_ipsec_xfrm_v6_transport_finish,
  	.local_error = nss_ipsec_xfrm_v6_local_error,
  };
-@@ -2112,7 +2119,6 @@ static struct xfrm_state_afinfo xfrm_v6_
+@@ -2112,7 +2120,6 @@ static struct xfrm_state_afinfo xfrm_v6_
   * IPv6 xfrm_type ESP object.
   */
  static const struct xfrm_type xfrm_v6_type = {
@@ -237,7 +253,7 @@
  	.owner = THIS_MODULE,
  	.proto = IPPROTO_ESP,
  	.flags = XFRM_TYPE_REPLAY_PROT,
-@@ -2121,7 +2127,9 @@ static const struct xfrm_type xfrm_v6_ty
+@@ -2121,7 +2128,9 @@ static const struct xfrm_type xfrm_v6_ty
  	.get_mtu = nss_ipsec_xfrm_esp_get_mtu,
  	.input = nss_ipsec_xfrm_esp_input,
  	.output = nss_ipsec_xfrm_esp_output,
@@ -247,7 +263,7 @@
  };
  
  /*
-@@ -2207,7 +2215,6 @@ static void nss_ipsec_xfrm_restore_afinf
+@@ -2207,7 +2216,6 @@ static void nss_ipsec_xfrm_restore_afinf
  	}
  
  	xfrm_unregister_type(base, family);
@@ -255,7 +271,7 @@
  	xfrm_state_update_afinfo(family, afinfo);
  }
  
-@@ -2292,14 +2299,10 @@ static void nss_ipsec_xfrm_override_afin
+@@ -2292,14 +2300,10 @@ static void nss_ipsec_xfrm_override_afin
   */
  int __init nss_ipsec_xfrm_init_module(void)
  {
@@ -270,7 +286,7 @@
  	net_get_random_once(&g_ipsec_xfrm.hash_nonce, sizeof(g_ipsec_xfrm.hash_nonce));
  
  	/*
-@@ -2327,7 +2330,6 @@ int __init nss_ipsec_xfrm_init_module(vo
+@@ -2327,7 +2331,6 @@ int __init nss_ipsec_xfrm_init_module(vo
  	nss_ipsec_xfrm_override_afinfo(&g_ipsec_xfrm, AF_INET6);
  
  	ecm_interface_ipsec_register_callbacks(&xfrm_ecm_ipsec_cb);
@@ -278,7 +294,7 @@
  
  #if defined(NSS_L2TPV2_ENABLED)
  	l2tpmgr_register_ipsecmgr_callback_by_ipaddr(&xfrm_l2tp);
-@@ -2336,6 +2338,7 @@ int __init nss_ipsec_xfrm_init_module(vo
+@@ -2336,6 +2339,7 @@ int __init nss_ipsec_xfrm_init_module(vo
  	/*
  	 * Register for xfrm events
  	 */
@@ -286,7 +302,7 @@
  	xfrm_register_km(&nss_ipsec_xfrm_mgr);
  
  	/*
-@@ -2346,6 +2349,7 @@ int __init nss_ipsec_xfrm_init_module(vo
+@@ -2346,6 +2350,7 @@ int __init nss_ipsec_xfrm_init_module(vo
  	return 0;
  
  unreg_v4_handler:
@@ -296,7 +312,24 @@
  }
 --- a/ipsecmgr/v2.0/plugins/xfrm/nss_ipsec_xfrm_sa.c
 +++ b/ipsecmgr/v2.0/plugins/xfrm/nss_ipsec_xfrm_sa.c
-@@ -181,7 +181,7 @@ static bool nss_ipsec_xfrm_sa_init_crypt
+@@ -55,13 +55,15 @@ struct nss_ipsec_xfrm_algo {
+ static struct nss_ipsec_xfrm_algo xfrm_algo[] = {
+ 	{.cipher_name = "cbc(aes)", .auth_name = "hmac(sha1)", .algo = NSS_IPSECMGR_ALGO_AES_CBC_SHA1_HMAC},
+ 	{.cipher_name = "cbc(des3_ede)", .auth_name = "hmac(sha1)", .algo = NSS_IPSECMGR_ALGO_3DES_CBC_SHA1_HMAC},
++#ifndef NSS_IPSEC_XFRM_IPQ50XX
+ 	{.cipher_name  = "cbc(aes)", .auth_name = "hmac(md5)", .algo = NSS_IPSECMGR_ALGO_AES_CBC_MD5_HMAC},
+ 	{.cipher_name = "cbc(des3_ede)", .auth_name = "hmac(md5)", .algo = NSS_IPSECMGR_ALGO_3DES_CBC_MD5_HMAC},
+ 	{.cipher_name = "rfc4106(gcm(aes))", .auth_name = "rfc4106(gcm(aes))", .algo = NSS_IPSECMGR_ALGO_AES_GCM_GMAC_RFC4106},
+ 	{.cipher_name = "ecb(cipher_null)", .auth_name = "hmac(sha1)", .algo = NSS_IPSECMGR_ALGO_NULL_CIPHER_SHA1_HMAC},
++	{.cipher_name = "ecb(cipher_null)", .auth_name = "hmac(sha256)", .algo = NSS_IPSECMGR_ALGO_NULL_CIPHER_SHA256_HMAC},
++#endif
+ 	{.cipher_name = "cbc(aes)", .auth_name = "hmac(sha256)", .algo = NSS_IPSECMGR_ALGO_AES_CBC_SHA256_HMAC},
+ 	{.cipher_name = "cbc(des3_ede)", .auth_name = "hmac(sha256)", .algo = NSS_IPSECMGR_ALGO_3DES_CBC_SHA256_HMAC},
+-	{.cipher_name = "ecb(cipher_null)", .auth_name = "hmac(sha256)", .algo = NSS_IPSECMGR_ALGO_NULL_CIPHER_SHA256_HMAC},
+ };
+ 
+ /*
+@@ -181,7 +183,7 @@ static bool nss_ipsec_xfrm_sa_init_crypt
   */
  static void nss_ipsec_xfrm_sa_init_tuple(struct nss_ipsec_xfrm_sa *sa, struct xfrm_state *x)
  {
@@ -305,7 +338,7 @@
  
  	sa->type = NSS_IPSECMGR_SA_TYPE_ENCAP;
  	sa->tuple.spi_index = ntohl(x->id.spi);
-@@ -215,7 +215,7 @@ static void nss_ipsec_xfrm_sa_init_tuple
+@@ -215,7 +217,7 @@ static void nss_ipsec_xfrm_sa_init_tuple
  		sa->tuple.dest_ip[2] = ntohl(x->id.daddr.a6[2]);
  		sa->tuple.dest_ip[3] = ntohl(x->id.daddr.a6[3]);
  
@@ -332,23 +365,6 @@
  }
  
  /*
-From 2b32003b2e6225802361bc3bab12fcb3510f0327 Mon Sep 17 00:00:00 2001
-From: Suhas N Bhargav <sbhargav@codeaurora.org>
-Date: Thu, 30 Sep 2021 16:32:12 +0530
-Subject: [PATCH] [qca-nss-clients] Fix to avoid contention b/w write locks in
- ipsecmgr
-
-This fix is needed to avoid contention of locks between two
-entities which are in process & interrupt context
-
-Change-Id: I9986606b99d7642cca1c105bdf05e0ed67b66374
-Signed-off-by: Suhas N Bhargav <sbhargav@codeaurora.org>
----
- ipsecmgr/v2.0/nss_ipsecmgr.c        |  6 +++---
- ipsecmgr/v2.0/nss_ipsecmgr_flow.c   |  8 ++++----
- ipsecmgr/v2.0/nss_ipsecmgr_tunnel.c | 10 +++++-----
- 3 files changed, 12 insertions(+), 12 deletions(-)
-
 --- a/ipsecmgr/v2.0/nss_ipsecmgr.c
 +++ b/ipsecmgr/v2.0/nss_ipsecmgr.c
 @@ -1,6 +1,6 @@
@@ -445,24 +461,6 @@ Signed-off-by: Suhas N Bhargav <sbhargav@codeaurora.org>
  
  	nss_ipsecmgr_tunnel_mtu(dev, skb_dev ? skb_dev->mtu : dev->mtu);
  
---- a/ipsecmgr/v2.0/plugins/xfrm/nss_ipsec_xfrm.c
-+++ b/ipsecmgr/v2.0/plugins/xfrm/nss_ipsec_xfrm.c
-@@ -1,5 +1,6 @@
- /* Copyright (c) 2021, The Linux Foundation. All rights reserved.
-  *
-+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
-  * Permission to use, copy, modify, and/or distribute this software for any
-  * purpose with or without fee is hereby granted, provided that the above
-  * copyright notice and this permission notice appear in all copies.
-@@ -254,7 +255,7 @@ static void nss_ipsec_xfrm_flush_flow_by
- 
- 	for (count = NSS_IPSEC_XFRM_FLOW_DB_MAX; count--; db_head++) {
- 		list_for_each_entry_safe(flow, tmp, db_head, list_entry) {
--			if (flow->sa == sa) {
-+			if (READ_ONCE(flow->sa) == sa) {
- 				list_del_init(&flow->list_entry);
- 				list_add(&flow->list_entry, &free_head);
- 			}
 --- a/ipsecmgr/v2.0/plugins/xfrm/nss_ipsec_xfrm_flow.c
 +++ b/ipsecmgr/v2.0/plugins/xfrm/nss_ipsec_xfrm_flow.c
 @@ -1,4 +1,5 @@
@@ -540,22 +538,3 @@ Signed-off-by: Suhas N Bhargav <sbhargav@codeaurora.org>
 +ifeq ($(SoC),$(filter $(SoC),ipq50xx ipq50xx_64))
 +ccflags-y += -DNSS_IPSEC_XFRM_IPQ50XX
 +endif
---- a/ipsecmgr/v2.0/plugins/xfrm/nss_ipsec_xfrm_sa.c
-+++ b/ipsecmgr/v2.0/plugins/xfrm/nss_ipsec_xfrm_sa.c
-@@ -55,13 +55,15 @@ struct nss_ipsec_xfrm_algo {
- static struct nss_ipsec_xfrm_algo xfrm_algo[] = {
- 	{.cipher_name = "cbc(aes)", .auth_name = "hmac(sha1)", .algo = NSS_IPSECMGR_ALGO_AES_CBC_SHA1_HMAC},
- 	{.cipher_name = "cbc(des3_ede)", .auth_name = "hmac(sha1)", .algo = NSS_IPSECMGR_ALGO_3DES_CBC_SHA1_HMAC},
-+#ifndef NSS_IPSEC_XFRM_IPQ50XX
- 	{.cipher_name  = "cbc(aes)", .auth_name = "hmac(md5)", .algo = NSS_IPSECMGR_ALGO_AES_CBC_MD5_HMAC},
- 	{.cipher_name = "cbc(des3_ede)", .auth_name = "hmac(md5)", .algo = NSS_IPSECMGR_ALGO_3DES_CBC_MD5_HMAC},
- 	{.cipher_name = "rfc4106(gcm(aes))", .auth_name = "rfc4106(gcm(aes))", .algo = NSS_IPSECMGR_ALGO_AES_GCM_GMAC_RFC4106},
- 	{.cipher_name = "ecb(cipher_null)", .auth_name = "hmac(sha1)", .algo = NSS_IPSECMGR_ALGO_NULL_CIPHER_SHA1_HMAC},
-+	{.cipher_name = "ecb(cipher_null)", .auth_name = "hmac(sha256)", .algo = NSS_IPSECMGR_ALGO_NULL_CIPHER_SHA256_HMAC},
-+#endif
- 	{.cipher_name = "cbc(aes)", .auth_name = "hmac(sha256)", .algo = NSS_IPSECMGR_ALGO_AES_CBC_SHA256_HMAC},
- 	{.cipher_name = "cbc(des3_ede)", .auth_name = "hmac(sha256)", .algo = NSS_IPSECMGR_ALGO_3DES_CBC_SHA256_HMAC},
--	{.cipher_name = "ecb(cipher_null)", .auth_name = "hmac(sha256)", .algo = NSS_IPSECMGR_ALGO_NULL_CIPHER_SHA256_HMAC},
- };
- 
- /*

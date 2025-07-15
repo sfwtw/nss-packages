@@ -96,21 +96,21 @@ enable_rps() {
   set_affinity "nss_queue0"                 0 1
   set_affinity "nss_queue1"                 1 1
   set_affinity "nss_queue2"                 2 1
-  set_affinity "nss_queue3"                 3 1
+  set_affinity "nss_queue3"                 0 1
 
   # NSS Core 1 : 1 nss queue to 3rd core
-  set_affinity "nss_queue0"                 3 2
+  set_affinity "nss_queue0"                 2 2
   set_affinity "nss_queue1"                 2 2
   set_affinity "nss_queue2"                 1 2
   set_affinity "nss_queue3"                 0 2
 
   # NSS Core 0 : 2 nss sos/queues to last core
   set_affinity "nss_empty_buf_sos"          0 1
-  set_affinity "nss_empty_buf_queue"        0 1
+  set_affinity "nss_empty_buf_queue"        1 1
 
   # NSS Core 1 : 1 nss sos to last core
-  set_affinity "nss_empty_buf_sos"          3 2
-  set_affinity "nss_empty_buf_queue"        3 2
+  set_affinity "nss_empty_buf_sos"          1 2
+  set_affinity "nss_empty_buf_queue"        0 2
 
   # USB 3.0 : pin to 3rd core
   set_affinity "xhci-hcd:usb1"              2 1
@@ -121,10 +121,10 @@ enable_rps() {
   # are offloaded, so balance remaining IRQs accordingly.
   # PPDU IRQ : pin to 2nd and 3rd core
   set_affinity 'ppdu-end-interrupts-mac1'   2 1
-  set_affinity 'ppdu-end-interrupts-mac2'   3 1
+  set_affinity 'ppdu-end-interrupts-mac2'   2 1
   set_affinity 'ppdu-end-interrupts-mac3'   1 1
 
-  set_affinity 'ath10k_pci'               2,3 1
+  set_affinity 'ath10k_pci'               1,2 1
 
   # Enable NSS RPS
   sysctl -w dev.nss.rps.enable=1 >/dev/null 2>&1
